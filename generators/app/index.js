@@ -6,7 +6,6 @@ const glob = require("globby");
 const { resolve } = require("path");
 const remote = require("yeoman-remote");
 const yoHelper = require("@jswork/yeoman-generator-helper");
-const replace = require("replace-in-file");
 const fs = require("fs");
 
 require("@jswork/next-registry-choices");
@@ -45,12 +44,12 @@ module.exports = class extends Generator {
       {
         type: "input",
         name: "description",
-        message: "Your description?"
+        message: "Your description?",
+        validate: Boolean
       }
     ];
 
     return this.prompt(prompts).then(props => {
-      // To access props later use this.props.someAnswer;
       this.props = props;
       yoHelper.rewriteProps(props);
     });
@@ -76,8 +75,8 @@ module.exports = class extends Generator {
     const partialPath = resolve(dest, "package.partial.json");
     if (fs.existsSync(pkgPath)) {
       const pkg = nx.deepAssign(require(pkgPath), require(partialPath));
-      this.fs.delete(partialPath);
       fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+      fs.unlinkSync(partialPath);
     }
   }
 };
