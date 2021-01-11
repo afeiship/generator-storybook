@@ -3,17 +3,15 @@ const Generator = require("yeoman-generator");
 const chalk = require("chalk");
 const yosay = require("yosay");
 const glob = require("globby");
-const { resolve } = require("path");
 const remote = require("yeoman-remote");
 const yoHelper = require("@jswork/yeoman-generator-helper");
 const fs = require("fs");
+const prompts = require("./prompts");
 
-require("@jswork/next-registry-choices");
 require("@jswork/next-deep-assign");
 
 module.exports = class extends Generator {
   prompting() {
-    // Have Yeoman greet the user.
     this.log(
       yosay(
         `Welcome to the stunning ${chalk.red(
@@ -21,33 +19,6 @@ module.exports = class extends Generator {
         )} generator!`
       )
     );
-
-    const prompts = [
-      {
-        type: "input",
-        name: "scope",
-        message: "Your scope (eg: `babel` )?",
-        default: "jswork"
-      },
-      {
-        type: "list",
-        name: "registry",
-        message: "Your registry",
-        choices: nx.RegistryChoices.gets()
-      },
-      {
-        type: "input",
-        name: "project_name",
-        message: "Your project_name (eg: like this `react-button` )?",
-        default: yoHelper.discoverRoot
-      },
-      {
-        type: "input",
-        name: "description",
-        message: "Your description?",
-        validate: Boolean
-      }
-    ];
 
     return this.prompt(prompts).then(props => {
       this.props = props;
@@ -60,8 +31,9 @@ module.exports = class extends Generator {
 
     remote("afeiship", "boilerplate-storybook", (_, cachePath) => {
       const options = { cwd: cachePath, absolute: true };
+      const patterns = ["{**,.storybook/*}", "!*.md", "!.gitignore"];
       this.fs.copyTpl(
-        glob.sync(["{**,.storybook/*}", "!*.md", "!.gitignore"], options),
+        glob.sync(patterns, options),
         this.destinationPath(),
         this.props
       );
@@ -70,9 +42,8 @@ module.exports = class extends Generator {
   }
 
   end() {
-    const dest = this.destinationPath();
-    const pkgPath = resolve(dest, "package.json");
-    const partialPath = resolve(dest, "package.partial.json");
+    const pkgPath = this.destinationPath("package.json");
+    const partialPath = this.destinationPath("package.partial.json");
     if (fs.existsSync(pkgPath)) {
       const pkg = nx.deepAssign(require(pkgPath), require(partialPath));
       fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
